@@ -15,6 +15,7 @@ public class CharacterController : MonoBehaviour
     private BoxCollider2D boxCollider;
 
     public Animator sheepAnim;
+    public SpriteRenderer sheepSprite;
 
     private bool isWalking = false,
                  isGrounded = false,
@@ -25,7 +26,6 @@ public class CharacterController : MonoBehaviour
     private void Awake()
     {      
         boxCollider = GetComponent<BoxCollider2D>();
-        sheepAnim = gameObject.GetComponent<Animator>();
     }
 
     // start is called before the first frame update
@@ -46,18 +46,16 @@ public class CharacterController : MonoBehaviour
 
         if (moveInput != 0) {
 	        velocity.x = Mathf.MoveTowards(velocity.x, speed * moveInput, acceleration * Time.deltaTime);
+            isWalking = true;
         } else {
 	        velocity.x = Mathf.MoveTowards(velocity.x, 0, deceleration * Time.deltaTime);
-        }
-
-        if (velocity.x == 0 & velocity.y == 0) {
             isWalking = false;
-        } else if (velocity.x > 0) {
+        }
+        
+        if (moveInput > 0) {
             isFlipped = false;
-            isWalking = true;
-        } else if (velocity.x < 0) {
+        } else if (moveInput < 0) {
             isFlipped = true;
-            isWalking = true;
         }
 
         if (isGrounded) {
@@ -89,6 +87,6 @@ public class CharacterController : MonoBehaviour
 
         sheepAnim.SetBool("isWalking", isWalking);
         sheepAnim.SetBool("isGrounded", isGrounded);
-        GetComponent<SpriteRenderer>().flipX = isFlipped;
+        sheepSprite.flipX = isFlipped;
     }
 }
