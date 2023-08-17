@@ -578,7 +578,8 @@ MonoBehaviour:
   airAcceleration: 30
   groundDeceleration: 70
   jumpHeight: 4
-  fallSpeed: 4
+  fallSpeed: 1
+  jumpBufferTime: 0.15
   sheepAnim: {fileID: 551860252}
   sheepSprite: {fileID: 2085423055}
 --- !u!61 &667227932

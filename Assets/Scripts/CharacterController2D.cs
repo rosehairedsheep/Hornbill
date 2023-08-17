@@ -5,15 +5,18 @@ using UnityEngine;
 [RequireComponent(typeof(BoxCollider2D))]
 public class CharacterController : MonoBehaviour
 {
-    [SerializeField] float speed = 9;
-    [SerializeField] float walkAcceleration = 75;
-    [SerializeField] float airAcceleration = 30;
-    [SerializeField] float groundDeceleration = 70;
-    [SerializeField] float jumpHeight = 4;
-    [SerializeField] float fallSpeed = 1;
+    [SerializeField] float speed = 9f;
+    [SerializeField] float walkAcceleration = 75f;
+    [SerializeField] float airAcceleration = 30f;
+    [SerializeField] float groundDeceleration = 70f;
+    [SerializeField] float jumpHeight = 4f;
+    [SerializeField] float fallSpeed = 1f;
+
+    [SerializeField] float jumpBufferTime = 1f;
+    private bool jumpBuffered = false;
+    private float bufferedTime;
 
     private BoxCollider2D boxCollider;
-
     public Animator sheepAnim;
     public SpriteRenderer sheepSprite;
 
@@ -44,6 +47,21 @@ public class CharacterController : MonoBehaviour
         transform.Translate(velocity * Time.deltaTime);
 
 
+        // solve overlaps
+        Collider2D[] hits = Physics2D.OverlapBoxAll(transform.position, boxCollider.size, 0);
+
+        foreach (Collider2D hit in hits) {
+	        if (hit == boxCollider)
+	            continue;
+
+	        ColliderDistance2D colliderDistance = hit.Distance(boxCollider);
+
+	        if (colliderDistance.isOverlapped) {
+		        transform.Translate(colliderDistance.pointA - colliderDistance.pointB);
+	        }
+        }
+
+
         // handle velocity
         float moveInput = Input.GetAxisRaw("Horizontal");
         float acceleration = isGrounded ? walkAcceleration : airAcceleration;
@@ -65,29 +83,11 @@ public class CharacterController : MonoBehaviour
 
         if (isGrounded) {
 	        velocity.y = 0;
-	        if (Input.GetButtonDown("Jump")) {
-                isGrounded = false;
-                Debug.Log("Jump!");
-		        velocity.y = Mathf.Sqrt(2 * jumpHeight * Mathf.Abs(Physics2D.gravity.y));
-	        }
         } else {
             velocity.y += fallSpeed * Physics2D.gravity.y * Time.deltaTime;
         }
-        
 
-        // solve overlaps
-        Collider2D[] hits = Physics2D.OverlapBoxAll(transform.position, boxCollider.size, 0);
-
-        foreach (Collider2D hit in hits) {
-	        if (hit == boxCollider)
-	            continue;
-
-	        ColliderDistance2D colliderDistance = hit.Distance(boxCollider);
-
-	        if (colliderDistance.isOverlapped) {
-		        transform.Translate(colliderDistance.pointA - colliderDistance.pointB);
-	        }
-        }
+        if (Input.GetButtonDown("Jump")) Jump(false);
 
 
         // configure the animations
@@ -96,10 +96,22 @@ public class CharacterController : MonoBehaviour
         sheepSprite.flipX = isFlipped;
     }
 
-    void OnTriggerStay2D(Collider2D other)
+    void OnTriggerEnter2D(Collider2D other)
     {
         if (other.CompareTag("Ground")) {
             isGrounded = true;
+            if (jumpBuffered & (Time.time - bufferedTime < jumpBufferTime)) Jump(true);
+        }
+    }
+
+    void Jump(bool wasBuffered) {
+        if (isGrounded) {
+            isGrounded = false;
+            jumpBuffered = false;
+		    velocity.y = Mathf.Sqrt(2 * jumpHeight * Mathf.Abs(Physics2D.gravity.y));
+	    } else if (!wasBuffered) {
+            jumpBuffered = true;
+            bufferedTime = Time.time;
         }
     }
 }
