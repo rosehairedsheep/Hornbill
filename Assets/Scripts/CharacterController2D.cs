@@ -9,7 +9,9 @@ public class CharacterController : MonoBehaviour
     [SerializeField] float walkAcceleration = 75f;
     [SerializeField] float airAcceleration = 30f;
     [SerializeField] float groundDeceleration = 70f;
+
     [SerializeField] float jumpHeight = 4f;
+    [SerializeField] float airGravity = 1f;
     [SerializeField] float fallSpeed = 1f;
 
     [SerializeField] float jumpBufferTime = 1f;
@@ -27,18 +29,15 @@ public class CharacterController : MonoBehaviour
     private Vector2 velocity;
     private Vector2 defaultPosition;
 
-    private void Awake()
-    {      
+    private void Awake() {      
         boxCollider = GetComponent<BoxCollider2D>();
     }
 
-    void Start()
-    {
+    void Start() {
         defaultPosition = gameObject.transform.position;
     }
 
-    void Update()
-    {
+    void Update() {
         // reset position if sheep is offscreen
         if(!sheepSprite.isVisible) {
             transform.position = defaultPosition;
@@ -83,8 +82,10 @@ public class CharacterController : MonoBehaviour
 
         if (isGrounded) {
 	        velocity.y = 0;
+        } else if (velocity.y > 0 & Input.GetButton("Jump")) {
+            velocity.y += airGravity * Physics2D.gravity.y * Time.deltaTime;
         } else {
-            velocity.y += fallSpeed * Physics2D.gravity.y * Time.deltaTime;
+            velocity.y += airGravity * fallSpeed * Physics2D.gravity.y * Time.deltaTime;
         }
 
         if (Input.GetButtonDown("Jump")) Jump(false);
@@ -96,19 +97,22 @@ public class CharacterController : MonoBehaviour
         sheepSprite.flipX = isFlipped;
     }
 
-    void OnTriggerEnter2D(Collider2D other)
-    {
+    void OnTriggerEnter2D(Collider2D other) {
         if (other.CompareTag("Ground")) {
             isGrounded = true;
             if (jumpBuffered & (Time.time - bufferedTime < jumpBufferTime)) Jump(true);
         }
     }
 
+    void OnTriggerExit2D(Collider2D other) {
+        if (other.CompareTag("Ground")) isGrounded = false;
+    }
+
     void Jump(bool wasBuffered) {
         if (isGrounded) {
-            isGrounded = false;
-            jumpBuffered = false;
+            sheepAnim.SetTrigger("jump");
 		    velocity.y = Mathf.Sqrt(2 * jumpHeight * Mathf.Abs(Physics2D.gravity.y));
+            isGrounded = jumpBuffered = false;
 	    } else if (!wasBuffered) {
             jumpBuffered = true;
             bufferedTime = Time.time;
