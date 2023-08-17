@@ -24,7 +24,8 @@ public class CharacterController : MonoBehaviour
 
     private bool isWalking = false,
                  isGrounded = false,
-                 isFlipped = false;
+                 isFlipped = false,
+                 isJumping = false;
 
     private Vector2 velocity;
     private Vector2 defaultPosition;
@@ -94,18 +95,22 @@ public class CharacterController : MonoBehaviour
         // configure the animations
         sheepAnim.SetBool("isWalking", isWalking);
         sheepAnim.SetBool("isGrounded", isGrounded);
+        sheepAnim.SetBool("isJumping", isJumping);
         sheepSprite.flipX = isFlipped;
     }
 
     void OnTriggerEnter2D(Collider2D other) {
         if (other.CompareTag("Ground")) {
             isGrounded = true;
+            isJumping = false;
             if (jumpBuffered & (Time.time - bufferedTime < jumpBufferTime)) Jump(true);
         }
     }
 
     void OnTriggerExit2D(Collider2D other) {
-        if (other.CompareTag("Ground")) isGrounded = false;
+        if (other.CompareTag("Ground")) {
+            isGrounded = false;
+        }
     }
 
     void Jump(bool wasBuffered) {
@@ -113,6 +118,7 @@ public class CharacterController : MonoBehaviour
             sheepAnim.SetTrigger("jump");
 		    velocity.y = Mathf.Sqrt(2 * jumpHeight * Mathf.Abs(Physics2D.gravity.y));
             isGrounded = jumpBuffered = false;
+            isJumping = true;
 	    } else if (!wasBuffered) {
             jumpBuffered = true;
             bufferedTime = Time.time;
